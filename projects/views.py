@@ -1,9 +1,58 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from .models import Project
+from .forms import ProjectForm
 
 
 def projects(request):
-    return render(request, 'projects/projects.html')
+    projectsObj = Project.objects.all()
+
+    context = {'projectsObj': projectsObj}
+    return render(request, 'projects/projects.html', context)
 
 
 def project(request, pk):
-    return render(request, 'projects/single-project.html')
+    projectObj = Project.objects.get(id=pk)
+    tags = projectObj.tags.all()
+
+    context = {'projectObj': projectObj}  # , 'tags': tags
+    return render(request, 'projects/single-project.html', context)
+
+
+def createProject(request):
+    form = ProjectForm()
+
+    if request.method == 'POST':
+        form = ProjectForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('projects')
+
+    context = {'form': form}
+    return render(request, 'projects/project_form.html', context)
+
+
+def updateProject(request, pk):
+    projectObj = Project.objects.get(id=pk)
+    form = ProjectForm(instance=projectObj)
+
+    if request.method == 'POST':
+        form = ProjectForm(request.POST, instance=projectObj)
+        if form.is_valid():
+            form.save()
+            return redirect('projects')
+
+    context = {'form': form}
+    return render(request, 'projects/project_form.html', context)
+
+
+def deleteProject(request, pk):
+    projectObj = Project.objects.get(id=pk)
+
+    if request.method == "POST":
+        projectObj.delete()
+        return redirect('projects')
+
+    context = {'object': projectObj}
+    return render(request, 'projects/delete_template.html', context)
+
+
