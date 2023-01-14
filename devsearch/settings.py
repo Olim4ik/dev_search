@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     # todo => new
     'projects.apps.ProjectsConfig',
+    'users.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
