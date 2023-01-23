@@ -13,7 +13,7 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
           integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
-          crossorigin="anonymous" referrerpolicy="no-referrer" />
+          crossorigin="anonymous" referrerpolicy="no-referrer"/>
     <!-- Mumble UI -->
     <link rel="stylesheet" href="{% static 'uikit/styles/uikit.css' %}"/>
     <!-- Dev Search UI -->
@@ -25,19 +25,20 @@
 <body>
 {% include 'navbar.html' %}
 
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert  alert--{{ message.tags }}">
-            <p class="alert__message">{{ message }}</p>
-            <button class="alert__close">x</button>
-        </div>
-    {% endfor %}
-{% endif %}
+<div class="text-center" style="position:fixed; top: 90px; width: 100%; z-index:9999;">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert  alert--{{ message.tags }}">
+                <p class="alert__message">{{ message }}</p>
+                <button class="alert__close">x</button>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>
 
 {% block content %}
 
 {% endblock content %}
-
 
 
 </body>

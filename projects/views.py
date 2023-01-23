@@ -1,13 +1,15 @@
 from django.shortcuts import render, redirect
-from .models import Project
+from .models import Project, Tag
 from .forms import ProjectForm
+from django.db.models import Q
+from .utils import searchProjects
 from django.contrib.auth.decorators import login_required
 
 
 def projects(request):
-    projectsObj = Project.objects.all()
+    projectsObj, search_query = searchProjects(request)
 
-    context = {'projectsObj': projectsObj}
+    context = {'projectsObj': projectsObj, 'search_query': search_query}
     return render(request, 'projects/projects.html', context)
 
 
@@ -21,13 +23,16 @@ def project(request, pk):
 
 @login_required(login_url='login')
 def createProject(request):
+    profile = request.user.profile
     form = ProjectForm()
 
     if request.method == 'POST':
         form = ProjectForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            return redirect('projects')
+            project = form.save(commit=False)
+            project.owner = profile
+            project.save()
+            return redirect('account')
 
     context = {'form': form}
     return render(request, 'projects/project_form.html', context)
@@ -35,14 +40,15 @@ def createProject(request):
 
 @login_required(login_url='login')
 def updateProject(request, pk):
-    projectObj = Project.objects.get(id=pk)
+    profile = request.user.profile
+    projectObj = profile.project_set.get(id=pk)
     form = ProjectForm(instance=projectObj)
 
     if request.method == 'POST':
         form = ProjectForm(request.POST, request.FILES, instance=projectObj)
         if form.is_valid():
             form.save()
-            return redirect('projects')
+            return redirect('account')
 
     context = {'form': form}
     return render(request, 'projects/project_form.html', context)
@@ -50,13 +56,14 @@ def updateProject(request, pk):
 
 @login_required(login_url='login')
 def deleteProject(request, pk):
-    projectObj = Project.objects.get(id=pk)
+    profile = request.user.profile
+    projectObj = profile.project_set.get(id=pk)
 
     if request.method == "POST":
         projectObj.delete()
-        return redirect('projects')
+        return redirect('account')
 
     context = {'object': projectObj}
-    return render(request, 'projects/delete_template.html', context)
+    return render(request, 'delete_template.html', context)
 
 
