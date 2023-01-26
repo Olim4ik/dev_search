@@ -4,8 +4,8 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
-from .models import Profile, Skill
-from .utils import searchProfiles
+from .models import Profile, Skill, Message
+from .utils import searchProfiles, paginateProfiles
 # from django.contrib.auth.forms import UserCreationForm # todo => replaced with below
 from .forms import CustomUserCreationForm, ProfileForm, SkillForm
 
@@ -16,7 +16,7 @@ def loginUser(request):
         return redirect('profiles')
 
     if request.method == 'POST':
-        username = request.POST['username']
+        username = request.POST['username'].lower()  # todo
         password = request.POST['password']
 
         try:
@@ -28,7 +28,7 @@ def loginUser(request):
 
         if user is not None:
             login(request, user)
-            return redirect('profiles')
+            return redirect(request.GET['next'] if 'next' in request.GET else 'account')  # 'profiles'
         else:
             messages.error(request, 'Username or password is incorrect')
 
@@ -67,8 +67,9 @@ def registerUser(request):
 
 def profiles(request):
     profilesObj, search_query = searchProfiles(request)
+    custom_range, profilesObj = paginateProfiles(request, profilesObj, 3)
 
-    context = {'profiles': profilesObj, 'search_query': search_query}
+    context = {'profiles': profilesObj, 'search_query': search_query, 'custom_range': custom_range}
     return render(request, 'users/profiles.html', context)
 
 
@@ -154,4 +155,26 @@ def deleteSkill(request, pk):
 
     context = {'object': skill}
     return render(request, 'delete_template.html', context)
+
+
+@login_required(login_url='login')
+def inbox(request):
+    profile = request.user.profile
+    messageRequests = profile.messages.all()  # todo => recipient related name messages
+    unreadCount = messageRequests.filter(is_read=False).count()
+
+    context = {'messageRequests': messageRequests, 'unreadCount': unreadCount}
+    return render(request, 'users/inbox.html', context)
+
+
+@login_required(login_url='login')
+def viewMessage(request, pk):
+    profile = request.user.profile
+    message = profile.messages.get(id=pk)
+    if message.is_read == False:
+        message.is_read = True
+        message.save()
+
+    context = {'message': message}
+    return render(request, 'users/message.html', context)
 

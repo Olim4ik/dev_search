@@ -1,23 +1,40 @@
 from django.shortcuts import render, redirect
 from .models import Project, Tag
-from .forms import ProjectForm
+from .forms import ProjectForm, ReviewForm
 from django.db.models import Q
-from .utils import searchProjects
+from .utils import searchProjects, paginateProjects
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 
 def projects(request):
     projectsObj, search_query = searchProjects(request)
 
-    context = {'projectsObj': projectsObj, 'search_query': search_query}
+    custom_range, projectsObj = paginateProjects(request, projectsObj, 6)
+
+    context = {'projectsObj': projectsObj, 'search_query': search_query,
+               'custom_range': custom_range}
     return render(request, 'projects/projects.html', context)
 
 
 def project(request, pk):
     projectObj = Project.objects.get(id=pk)
-    tags = projectObj.tags.all()
+    form = ReviewForm()
 
-    context = {'projectObj': projectObj}  # , 'tags': tags
+    if request.method == "POST":
+        form = ReviewForm(request.POST)
+        review = form.save(commit=False)  # we should set user to this review
+        review.project = projectObj
+        review.owner = request.user.profile
+        review.save()
+        # Update project vote count
+        projectObj.getVoteCount
+
+        messages.success(request, 'Your review was successfully submitted!')
+        return redirect('project', pk=projectObj.id)
+
+    context = {'projectObj': projectObj, 'form': form}  # , 'tags': tags
     return render(request, 'projects/single-project.html', context)
 
 
@@ -65,5 +82,3 @@ def deleteProject(request, pk):
 
     context = {'object': projectObj}
     return render(request, 'delete_template.html', context)
-
-
